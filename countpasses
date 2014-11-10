@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# +-------------------------------------------------------------------+
+# | Fairly simple script to count the amount of one-time use          |
+# | passwords left. Since each password can only be used once, it is  |
+# | important to generate and securely print out new ones.            |
+# |                                                                   |
+# | Arguments are used as a format for output, with %t, %u, %r and %p |
+# | representing total, used, remaining and percentage remaining      |
+# | respectively. %% also prints a single %.                          |
+# +-------------------------------------------------------------------+
+#
+# xeom | 2014-10-01
+# xeom | 2014-10-08
+
+OTPW="/home/xeom/.otpw"
+
+TOTAL=$( cat $OTPW | wc -l | awk '{print $1-2}' )
+USED=$( cat $OTPW | grep -- - | wc -l )
+REMAINING=$(( $TOTAL - $USED ))
+PERCENT=$(( (100 * $REMAINING) / $TOTAL ))
+
+output=""
+
+if [[ $* == "" ]]; then
+	echo "Used: $USED"
+	echo "Total: $TOTAL"
+	echo "Remaining: $REMAINING"
+
+else
+	escaped=false
+
+	args=$*
+
+	for argind in $(eval echo {0..${#args}}); do
+		arg=${args:$argind:1}
+
+		if [[ $escaped == true ]]; then
+			if [[ $arg == "u" ]]; then
+				output+="$USED"
+
+			elif [[ $arg == "t" ]]; then
+				output+="$TOTAL"
+
+			elif [[ $arg == "r" ]]; then
+				output+="$REMAINING"
+
+			elif [[ $arg == "p" ]]; then
+				output+="$PERCENT"
+
+			else
+				output+="$arg"
+			fi
+
+			broken=false
+
+		elif [[ $arg == "%" ]]; then
+			escaped=true
+
+		else
+			output+="$arg"
+
+		fi
+	done
+
+	echo "$output"
+fi

@@ -1,0 +1,62 @@
+#!/usr/bin/python
+#
+# +-------------------------------------------------------------------+
+# | A script that automatically points the @ of certain domains owned |
+# | by me to my IP.                                                   |
+# |                                                                   |
+# | Since I have a dynamic IP, I need to update where my domains      |
+# | point upon router restart. This automates that, and has the added |
+# | advantage that I can still remotely access my network after a new |
+# | IP has been allocated.                                            |
+# |                                                                   |
+# | Since this script contains passwords, it is a good idea to        |
+# | restrict read permissions.                                        |
+# |                                                                   |
+# | The first and arguments are a username/password combination. Any  |
+# | further arguments are domains to point.                           |
+# +-------------------------------------------------------------------+
+# 
+# xeom | 2014-10-30
+
+import sys
+import time
+import urllib2
+import pygodaddy
+
+IPPROVIDERS = [
+	"http://icanhazip.com",
+	"http://wtfismyip.com/text",
+	"http://myexternalip.com/raw"
+]
+
+IpResponce = [urllib2.urlopen(provider).read() for provider in IPPROVIDERS]
+IpCount    = {ip.strip():IpResponce.count(ip) for ip in set(IpResponce)}
+Ip         = max(IpCount, key=lambda k:IpCount[k])
+
+if len(IpCount) != 1:
+	sys.stderr.write("Your IP websites said some bullshit.")
+
+USER    = sys.argv[1]
+PASS    = sys.argv[2]
+TARGETS = set(sys.argv[3:])
+
+Client = pygodaddy.GoDaddyClient()
+Client.login(USER, PASS)
+
+Domains  = set(Client.find_domains())
+Domains &= TARGETS
+
+if len(Domains) < len(TARGETS):
+	sys.stderr.write("You don't even own these domains, you slut.")
+
+for Domain in Domains:
+	Record = Client.find_dns_records(Domain)
+	ZoneIP = Record[0].value
+
+	if ZoneIP != Ip:
+		print ("Redirecting domain "+Domain+" from "+ZoneIP+" to "+Ip)
+
+		Index = Record[0].index
+
+		Client._edit_record(Index, Ip)
+		Client._save_records(Domain, Index)

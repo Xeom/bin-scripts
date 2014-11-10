@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# +-------------------------------------------------------------------+
+# | Syncs '~/websync' to '~/web/files/vulcan' on canberra this is     |
+# | then accessible at 'http://xeo.la/f/vulcan/'.                     |
+# |                                                                   |
+# | The script logs the output of the last sync to                    |
+# | '~/doc/log/websync.log', and if its timestamp is before that of   |
+# | '~/websync', it syncs automatically. The 'f' option will force a  |
+# | sync, and not update the log, but rather print it to stdout. The  |
+# | 'u' option may be invoked to update the log timestamp and nothing |
+# | else.                                                             |
+# |                                                                   |
+# | Please note: This script is not intended for any kind of general  |
+# |              use. Death will result.                              |
+# +-------------------------------------------------------------------+
+#
+# xeom | 2014-09-26
+# xeom | 2014-10-01
+# xeom | 2014-10-05
+
+
+FLAGS="-azv --delete-after"
+HOST="xeom@xeo.la"
+REMOTE="~/web/files/vulcan"
+
+LOG=$HOME/doc/log/websync.log
+TOSYNC=$HOME/sync
+
+getmtime()
+{
+	echo $(stat -c %Y $1)
+}
+
+getmtimerecursive()
+{
+	getmtime $(ls --sort=time $(find $1 -type f))
+}
+
+[[ ! -f $LOG ]] && touch $LOG
+
+if [[ $* == *u* ]]; then
+	touch $LOG
+
+elif [[ $* == *f* ]]; then
+	rsync $FLAGS $TOSYNC/ $HOST:$REMOTE
+
+elif (( $(getmtime $LOG) < $(getmtimerecursive $TOSYNC) )); then
+	if [[ $* == *v* ]]; then
+		rsync $FLAGS $TOSYNC/ $HOST:$REMOTE
+	else
+		rsync $FLAGS $TOSYNC/ $HOST:$REMOTE >> $LOG
+	fi
+fi

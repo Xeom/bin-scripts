@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# +-------------------------------------------------------------------+
+# | Very simple script to force kill any processes named              |
+# | 'tmux attach' it is used to kill all tmux sessions, and make any  |
+# | small-windowed sessions go away. Any arguments are passed to kill |
+# +-------------------------------------------------------------------+
+#
+# xeom | 2014-09-27
+
+killiftmux()
+{
+	pid=$1
+	line=${@:5}
+
+	if [[ $line == tmux\ attach* ]]; then
+		kill $flags $pid
+	fi
+}
+
+flags=$*
+
+ps a | while read line; do
+	killiftmux $line
+done

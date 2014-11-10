@@ -1,0 +1,284 @@
+#!/usr/bin/python3
+#
+# +-------------------------------------------------------------------+
+# | A rather complex script, to automatically synchronize             |
+# | 'authorized_keys' files. The script looks at the local file, and  |
+# | looks for the line '#!sync'. The file after that marker is then   |
+# | synchronized between servers. Each key needs to have a line       |
+# | specifying how to access the server to which it belongs, prefixed | 
+# | with '#!'.                                                        |
+# |                                                                   |
+# | The rest of the line is then used with the 'scp' command to copy  |
+# | keyfiles from that server, and any pertaining to previously       |
+# | unknown servers are copied locally. If it is possible to copy the |
+# | '~/.ssh/id_rsa' file, then it overrides any other keys, helping   |
+# | clean old keys automatically.                                     |
+# |                                                                   |
+# | Likewise, the server's '/etc/hostname' will be used to determine  |
+# | the remote server's name, which will be added as a comment        |
+# | alongside the keys.                                               |
+# |                                                                   |
+# | Although a small degree of manual configuration is required, this |
+# | script should greatly automate the process of adding server keys. |
+# |                                                                   |
+# | The arguments should be a list of users whose key files should be |
+# | synced. The following flags are also allowed for configuring      |
+# | paths:                                                            |
+# |                                                                   |
+# | --home=*   This flag allows you to change the string from which   |
+# |            the location of homedirs is determined. The default is |
+# |            "/home/{user}"                                         |
+# |                                                                   |
+# | --ssh=*    This flag is for the location of .ssh folders. The     |
+# |            default is "{paths[home]}/.ssh"                        |
+# |                                                                   |
+# | --key=*    This flag is for the location of the authorized_keys   | 
+# |            file. The default is "{paths[ssh]}/authorized_keys"    |
+# |                                                                   |
+# | --temp=*   This flag is for the location of a temporary file to   |
+# |            download remote files to. The default is               |
+# |            "{paths[home]}/.passsync.tmp".                         |
+# |                                                                   |
+# | --pub=*    This flag is for the location of the public keyfile.   |
+# |            The default is "{paths[ssh]}/id_rsa.pub".              |
+# |                                                                   |
+# | --name=*   This flag is for the location of the hostname file.    |
+# |            The default is "/etc/hostname".                        |
+# |                                                                   |
+# | --output=* This flag sets the file to output the synchronised     |
+# |            keyfile. Unless set, it is output to the               |
+# |            authorized_keys file.                                  |
+# |                                                                   |
+# | As is pretty obvious, {paths[*]} will be replaced with a copy of  |
+# | the path by that name. {user} will also be replaced with the      |
+# | current username.                                                 |
+# |                                                                   |
+# | Any unlisted flag that is set will be readable as another         |
+# | paths[*] value, but will have no effect on anything besides that. |
+# |                                                                   |
+# | All of the flags entirely override the default values.            |
+# |                                                                   |
+# | All flags may be set to apply to one remote server only, in the   |
+# | same format as in the command, if given in the line describing a  |
+# | remote server after a #!set. Exempli gratia:                      |
+# | "#! -P100 user@host #!set --home="/usr/home/{user}" --direct      |
+# |                                                                   |
+# | In regards to flags set for specific hosts, please note that only |
+# | the final #!set is considered to be the start of such flags. So   |
+# | if for some godforsaken reason, you want to have a host which     |
+# | involves #!set, you can. If however, you want flags involving     |
+# | #!set, then feel free to kill yourself.                           |
+# |                                                                   |
+# | Finally, the following flags may be used for other functions:     |
+# |                                                                   |
+# | --dry-run  This flag does everything except write a file.         |
+# |                                                                   |
+# | --local    This flag downloads nothing from remote hosts.         |
+# |                                                                   |
+# | --stdout   This flag writes to stdout rather than a file.         |
+# |                                                                   |
+# | --direct   This flag only gets keys and hostnames directly from   |
+# |            the server whose key is sought.                        |
+# |                                                                   |
+# | --indirect This flag only gets keys and hostnames from keyfiles,  |
+# |            not the pub/name files of servers.                     |
+# |                                                                   |
+# | --no-name  This flag causes the script to not query hostnames.    |
+# |            Note that upon connecting to a host, everything will   |
+# |            still be overwritten unless other flags are used.      |
+# |                                                                   |
+# | --combine  This flag combines indirect and direct methods of      |
+# |            getting keys. It does not replace all keys reported by |
+# |            other servers with the one found in the actual server, |
+# |            it simply combines both.                               |
+# +-------------------------------------------------------------------+
+# 
+# xeom | 2014-10-10
+# xeom | 2014-10-17
+# xeom | 2014-10-19
+
+import os
+import sys
+
+def ParseFlags(flags, args=None):
+	result = {}
+
+	for arg in flags:
+		if arg.startswith("--"):
+			if "=" in arg:
+				key, value = arg.split("=")[:2]
+				result[key[2:]] = value
+
+			else:
+				result[arg[2:]] = True	
+
+		elif args != None:
+			args.append(arg)
+
+	return result
+
+
+
+class PathsDict(dict):
+	def __getitem__(self, key):
+		return dict.__getitem__(self, key).format(paths=self, user=self.User)
+
+def DownloadFile(host, file, temp):
+	if "#!set" in host:
+		host = "#!set".join(host.split("#!set")[:-1])
+
+	host = host.strip()
+	print ("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
+	return os.system("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
+
+class AuthKeysMain(object):
+	def __init__(self, user):
+		self.user = user
+		self.Sync()
+
+	def Sync(self):
+		self.GetPaths()
+
+		self.hostpub     = {}
+		self.hostpublk   = {}
+
+		self.localfile   = open(self.paths["key"])
+		self.localtext   = self.localfile.read()
+
+		self.pubkey      = open(self.paths["pub"]).read()
+		self.pubkey      = self.pubkey.split()[1]
+
+		tovisit     = set()
+
+		self.ParseFile(self.localtext, tovisit)
+
+		self.DownloadAll(tovisit)
+		
+
+		if "combine" not in self.paths:
+			self.hostpub.update(self.hostpublk)
+
+
+		else:
+			for key, value in self.hostpublk.items():
+				strip = value[-1].strip()
+
+				if strip not in self.hostpub[key]:
+					self.hostpub[key].append(strip)
+
+		final = self.localtext.split("#!sync")[0] + "\n".join(self.GenerateNewFile())
+
+		if "dry-run" not in self.paths:
+			self.WriteOutput(final)
+
+	def GetPaths(self):
+		self.pathsstatic = PathsDict(
+			home =                 "/home/{user}",
+			ssh  =           "{paths[home]}/.ssh",
+			key  = "{paths[ssh]}/authorized_keys",
+			temp =  "{paths[home]}/.passsync.tmp",
+			pub  =      "{paths[ssh]}/id_rsa.pub",
+			name =                "/etc/hostname",
+		)
+
+		self.pathsstatic.user = self.user
+
+		self.pathsstatic.update(Flags)
+
+		self.paths = PathsDict(self.pathsstatic)
+
+
+	def WriteOutput(self, output):
+		self.SelectOutput()
+
+		self.output.write(output)
+
+
+	def SelectOutput(self):
+		if "stdout" in self.paths:
+			self.output = sys.stdout
+
+		elif "output" in self.paths:
+			self.output = open(self.paths["output"], "w")
+
+		else:
+			self.output = open(self.paths["key"], "w")
+
+	def GenerateNewFile(self):
+		yield "#!sync\n"
+
+		for host, keys in self.hostpub.items():
+			yield "#!" + host
+
+			for key in keys:
+				yield key
+
+			yield "\n"
+
+	def DownloadAll(self, tovisit):
+		for host in tovisit:
+			if "direct" not in self.paths and 0 == DownloadFile(host, self.paths["key"], self.paths["temp"]):
+				self.ParseFile(open(self.paths["temp"]).read())
+
+			if "indirect" not in self.paths and 0 == DownloadFile(host, self.paths["pub"], self.paths["temp"]):
+				self.hostpublk[host] = [open(self.paths["temp"]).read().strip()]
+
+				if "no-name" not in self.paths and 0 == DownloadFile(host, self.paths["name"], self.paths["temp"]):
+					self.hostpublk[host].insert(0, "#" + open(self.paths["temp"]).read().strip())
+
+
+	def ParseFile(self, text, visited=None):
+		lines = text.split("\n")
+
+		if "#!sync" not in lines:
+			return None
+
+		lines   = lines[lines.index("#!sync") + 1:]
+		current    = None
+		ownid      = None
+
+		for line in lines:
+			split = line.split()
+
+			if line.startswith("#!"):
+				current = line.strip("#!")
+
+				self.paths = self.pathsstatic
+
+				if "#!set" in current:
+					pair = current.split("#!set")
+
+					buffer = []
+					args   = []
+
+					for arg in pair[-1].split(" "):
+						buffer.append(arg)
+
+						if arg.endswith("\\"):
+							continue
+
+						args.append(arg)
+						buffer = []
+
+					self.paths = PathsDict(self.pathsstatic)
+					self.paths.update(ParseFlags(args))
+
+				if current.strip() != "" and visited != None and "local" not in self.paths:
+					visited.add(current)
+
+				if current not in self.hostpub:
+					self.hostpub[current] = []
+
+			elif current != None:
+				strip = line.strip()
+
+				if strip != "" and strip not in self.hostpub[current]:
+					self.hostpub[current].append(strip)
+
+Users = []
+
+Flags = ParseFlags(sys.argv[1:], Users) 
+
+for User in Users:
+	PathsDict.User = User
+	AuthKeysMain(User)
