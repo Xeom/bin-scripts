@@ -26,28 +26,40 @@ import pygodaddy
 IPPROVIDERS = [
 	"http://icanhazip.com",
 	"http://wtfismyip.com/text",
-	"http://myexternalip.com/raw"
+	"http://myexternalip.com/raw",
+	"http://d.mort.coffee/webapp/ip/"
 ]
 
 IpResponce = [urllib2.urlopen(provider).read() for provider in IPPROVIDERS]
+
+IpCount = {}
+
+for Provider in IPPROVIDERS:
+	try:
+		raw = urllib2.urlopen(provider).read()
+		IpCount[raw] = IpCount.get(raw, 0) + 1
+	except Exception:
+		sys.stderr.write(Provider + " is broken.\n")
+
 IpCount    = {ip.strip():IpResponce.count(ip) for ip in set(IpResponce)}
 Ip         = max(IpCount, key=lambda k:IpCount[k])
 
 if len(IpCount) != 1:
-	sys.stderr.write("Your IP websites said some bullshit.")
+	sys.stderr.write("Your IP websites said some bullshit.\n")
 
 USER    = sys.argv[1]
 PASS    = sys.argv[2]
 TARGETS = set(sys.argv[3:])
 
 Client = pygodaddy.GoDaddyClient()
-Client.login(USER, PASS)
-
+if not Client.login(USER, PASS):
+	sys.stderr.write("Password/User incorrect.\n")
+print Client.find_domains()
 Domains  = set(Client.find_domains())
 Domains &= TARGETS
 
 if len(Domains) < len(TARGETS):
-	sys.stderr.write("You don't even own these domains, you slut.")
+	sys.stderr.write("You don't even own these domains, you slut.\n")
 
 for Domain in Domains:
 	Record = Client.find_dns_records(Domain)
