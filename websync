@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # +-------------------------------------------------------------------+
-# | Syncs '~/websync' to '~/web/files/vulcan' on canberra this is     |
-# | then accessible at 'http://xeo.la/f/vulcan/'.                     |
+# | Syncs '~/websync' to '~/web/files/$(HOSTNAME)' on canberra this   |
+# | is then accessible at 'http://xeo.la/f/$(HOSTNAME)/'.             |
 # |                                                                   |
 # | The script logs the output of the last sync to                    |
 # | '~/doc/log/websync.log', and if its timestamp is before that of   |
@@ -22,7 +22,7 @@
 
 FLAGS="-azv --delete-after"
 HOST="xeom@xeo.la"
-REMOTE="~/web/files/vulcan"
+REMOTE="~/web/files/$(HOSTNAME)"
 
 LOG=$HOME/doc/log/websync.log
 TOSYNC=$HOME/sync
