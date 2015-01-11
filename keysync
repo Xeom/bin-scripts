@@ -60,7 +60,7 @@
 # |                                                                   |
 # | All flags may be set to apply to one remote server only, in the   |
 # | same format as in the command, if given in the line describing a  |
-# | remote server after a #!set. Exempli gratia:                      |
+# | remote server after a #!set. e.g.:                                |
 # | "#! -P100 user@host #!set --home="/usr/home/{user}" --direct      |
 # |                                                                   |
 # | In regards to flags set for specific hosts, please note that only |
@@ -128,8 +128,8 @@ def DownloadFile(host, file, temp):
 		host = "#!set".join(host.split("#!set")[:-1])
 
 	host = host.strip()
-	print ("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
-	return os.system("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
+
+	return os.system("scp -q -o StrictHostKeyChecking=no {host}:{file} {temp} > /dev/null".format(**locals()))  
 
 class AuthKeysMain(object):
 	def __init__(self, user):
