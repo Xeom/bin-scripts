@@ -128,8 +128,8 @@ def DownloadFile(host, file, temp):
 		host = "#!set".join(host.split("#!set")[:-1])
 
 	host = host.strip()
-	print ("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
-	return os.system("scp {host}:{file} {temp} > /dev/null".format(**locals()))  
+
+	return os.system("scp -q -o StrictHostKeyChecking=no {host}:{file} {temp} > /dev/null".format(**locals()))  
 
 class AuthKeysMain(object):
 	def __init__(self, user):
