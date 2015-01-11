@@ -63,6 +63,7 @@ if len(Domains) < len(TARGETS):
 
 for Domain in Domains:
 	Record = Client.find_dns_records(Domain)
+	print Record
 	ZoneIP = Record[0].value
 
 	if ZoneIP != Ip:
