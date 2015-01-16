@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # +-------------------------------------------------------------------+
-# | Very simple script to backup a user's directory to /var/backups.  |
-# | Files or directories prefixed with a '.' are pruned, and the      |
-# | remainder is compressed into a .tar.gz format, and saved to       |
-# | '/var/backups/' as 'home-$user.tar.gz'. The sole argument is the  |
-# | of the user whose home directory is tobe backed up.               |
+# | Very simple script to backup users' '~/bak' directory to          |
+# | /var/backups. The directory is compressed into a .tar.gz format,  |
+# | and saved to '/var/backups/' as 'home-$user.tar.gz'.              |
+# |                                                                   |
+# | Each argument is a user, whose bak directory is to be backed up   |
 # +-------------------------------------------------------------------+
 #
 # xeom(root) | 2014-10-08
@@ -15,6 +15,8 @@
 #  be modifiable by root, or anyone will be able to run anything as
 #  root.
 
+cd /home/
+
 for user in $*; do
-	tar -zcf /var/backups/home-${user}.tar.gz /home/${user} --exclude=".*" &> /dev/null
+	tar -zcf /var/backups/home-${user}.tar.gz ${user} --exclude-from="${user}/.bakignore"
 done
