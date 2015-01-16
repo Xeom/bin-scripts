@@ -3,6 +3,8 @@
 BATSTATUS=$(acpi --battery)
 BATPERCENT=$(grep -oP "[0-9]+(?=%)" <<< "$BATSTATUS")
 
-if [[ $(grep Discharging <<< "$BATSTATUS") && (( $BATPERCENT < 15 )) ]]; then
-	i3-nagbar -m "Battery below 15%, wtf you little shit?";
+LOWTHRESHOLD="15"
+
+if [[ $(grep Discharging <<< "$BATSTATUS") && (( $BATPERCENT -lt $LOWTHRESHOLD )) ]]; then
+	notify-send "Battery low" "Battery at $BATPERCENT%" -u critical;
 fi
