@@ -1,0 +1,29 @@
+#!/bin/bash
+
+BATSTATUS=$(acpi --battery)
+BATPERCENT=$(grep -oP "[0-9]+(?=%)" <<< "$BATSTATUS")
+
+if [[ $(grep "Charging" <<< "$BATSTATUS") ]]; then
+	echo "⮎ $BATPERCENT%"
+	exit
+
+elif [[ $(grep "Full" <<< "$BATSTATUS") ]]; then
+	echo "⮒"
+	exit
+
+elif [[ $(grep "Discharging" <<< "$BATSTATUS") ]]; then
+	if (( $BATPERCENT > 60 )); then
+		echo "⮏ $BATPERCENT%"
+
+	elif (( $BATPERCENT > 20 )); then
+		echo "⮑ $BATPERCENT%"
+
+	else
+		echo "⮐ $BATPERCENT%"
+
+	fi
+
+else
+	echo "?"
+
+fi
