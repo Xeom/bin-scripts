@@ -22,10 +22,10 @@
 
 FLAGS="-azv --delete-after"
 HOST="xeom@xeo.la"
-REMOTE="~/web/files/$(HOSTNAME)"
+REMOTE="~/srv/python-web/files/files/$HOSTNAME"
 
 LOG=$HOME/doc/log/websync.log
-TOSYNC=$HOME/sync
+TOSYNC=$HOME/syn
 
 getmtime()
 {
@@ -51,4 +51,5 @@ elif (( $(getmtime $LOG) < $(getmtimerecursive $TOSYNC) )); then
 	else
 		rsync $FLAGS $TOSYNC/ $HOST:$REMOTE >> $LOG
 	fi
+	notify-send "Websync" "Synchronized with server."
 fi
