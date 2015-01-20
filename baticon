@@ -1,29 +1,32 @@
 #!/bin/bash
 
 BATSTATUS=$(acpi --battery)
-BATPERCENT=$(grep -oP "[0-9]+(?=%)" <<< "$BATSTATUS")
+TEMSTATUS=$(acpi --thermal)
+
+BATPERCENT=$(grep -oP -- "[0-9]+(?=%)" <<< "$BATSTATUS")
+TEMDEGREES=$(grep -oP -- "-?[0-9]+(?=\.[0-9]+ degrees)" <<< "$TEMSTATUS")
 
 if [[ $(grep "Charging" <<< "$BATSTATUS") ]]; then
-	echo "⮎ $BATPERCENT%"
-	exit
+	BAT="⮎ ($BATPERCENT%)"
 
 elif [[ $(grep "Full" <<< "$BATSTATUS") ]]; then
-	echo "⮒"
-	exit
+	BAT="⮒"
 
 elif [[ $(grep "Discharging" <<< "$BATSTATUS") ]]; then
 	if (( $BATPERCENT > 60 )); then
-		echo "⮏ $BATPERCENT%"
+		BAT="⮏ ($BATPERCENT%)"
 
 	elif (( $BATPERCENT > 20 )); then
-		echo "⮑ $BATPERCENT%"
+		BAT="⮑ ($BATPERCENT%)"
 
 	else
-		echo "⮐ $BATPERCENT%"
+		BAT="⮐ ($BATPERCENT%)"
 
 	fi
 
 else
-	echo "?"
+	BAT="?"
 
 fi
+
+echo "$TEMDEGREES°C $BAT"
