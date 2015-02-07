@@ -1,10 +1,10 @@
 #!/bin/bash
 
-BATSTATUS=$(acpi --battery)
-BATPERCENT=$(grep -oP "[0-9]+(?=%)" <<< "$BATSTATUS")
+batstatus=$(acpi --battery)
+batpercent=$(grep -oP "[0-9]+(?=%)" <<< "$batstatus")
 
-LOWTHRESHOLD="15"
+lowthreshold="15"
 
-if [[ $(grep Discharging <<< "$BATSTATUS") && (( $BATPERCENT -lt $LOWTHRESHOLD )) ]]; then
-	notify-send "Battery low" "Battery at $BATPERCENT%" -u critical;
+if [[ $(grep Discharging <<< "$batstatus") && (( $batpercent -lt $lowthreshold )) ]]; then
+	notifyscript -u critical "Battery low: Battery at $batpercent%";
 fi

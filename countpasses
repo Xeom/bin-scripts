@@ -13,19 +13,19 @@
 # xeom | 2014-10-01
 # xeom | 2014-10-08
 
-OTPW="/home/xeom/.otpw"
+otpw="/home/xeom/.otpw"
 
-TOTAL=$( cat $OTPW | wc -l | awk '{print $1-2}' )
-USED=$( cat $OTPW | grep -- - | wc -l )
-REMAINING=$(( $TOTAL - $USED ))
-PERCENT=$(( (100 * $REMAINING) / $TOTAL ))
+total=$(cat $otpw | wc -l | awk '{print $1-2}')
+used=$(cat $otpw | grep -- - | wc -l)
+remaining=$(( $total - $used ))
+percent=$(( (100 * $remaining) / $total ))
 
 output=""
 
 if [[ $* == "" ]]; then
-	echo "Used: $USED"
-	echo "Total: $TOTAL"
-	echo "Remaining: $REMAINING"
+	echo "Used: $used"
+	echo "Total: $total"
+	echo "Remaining: $remaining"
 
 else
 	escaped=false
@@ -37,16 +37,16 @@ else
 
 		if [[ $escaped == true ]]; then
 			if [[ $arg == "u" ]]; then
-				output+="$USED"
+				output+="$used"
 
 			elif [[ $arg == "t" ]]; then
-				output+="$TOTAL"
+				output+="$total"
 
 			elif [[ $arg == "r" ]]; then
-				output+="$REMAINING"
+				output+="$remaining"
 
 			elif [[ $arg == "p" ]]; then
-				output+="$PERCENT"
+				output+="$percent"
 
 			else
 				output+="$arg"

@@ -10,12 +10,12 @@
 #
 # xeom | 2014-11-10
 
-SSDIR="/home/${USER}/syn/scr/"
-SSFORMAT="%Y-%m-%d_%H-%M-%S.png"
+ssdir="/home/${USER}/syn/scr/"
+ssformat="%Y-%m-%d_%H-%M-%S.png"
 
-file=${SSDIR}$(date +${SSFORMAT})
+file=${ssdir}$(date +${ssformat})
 
 scrot $file
 websync -f
 
-notify-send -u low "Screenshot" "Took and uploaded screenshot."
+notifyscript -u low Took and uploaded screenshot

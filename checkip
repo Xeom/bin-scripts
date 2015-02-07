@@ -1,74 +1,127 @@
 #!/usr/bin/python
 #
 # +-------------------------------------------------------------------+
-# | A script that automatically points the @ of certain domains owned |
-# | by me to my IP.                                                   |
-# |                                                                   |
-# | Since I have a dynamic IP, I need to update where my domains      |
-# | point upon router restart. This automates that, and has the added |
-# | advantage that I can still remotely access my network after a new |
-# | IP has been allocated.                                            |
-# |                                                                   |
-# | Since this script contains passwords, it is a good idea to        |
-# | restrict read permissions.                                        |
-# |                                                                   |
-# | The first and arguments are a username/password combination. Any  |
-# | further arguments are domains to point.                           |
+# | A script to redirect all domains owned by a specific person on    |
+# | cloudflare to the current IP.                                     |
 # +-------------------------------------------------------------------+
 # 
 # xeom | 2014-10-30
-
-import sys
-import time
+import httplib
 import urllib2
-import pygodaddy
+import json
+import sys
 
-IPPROVIDERS = [
-	"http://icanhazip.com",
-	"http://wtfismyip.com/text",
-	"http://myexternalip.com/raw",
-	"http://d.mort.coffee/webapp/ip/"
-]
+class Domain(object):
+	def __init__(self, api, properties):
+		self.api = api
 
-IpResponce = [urllib2.urlopen(provider).read() for provider in IPPROVIDERS]
+		self.properties = {}
+		self.properties.update(properties)
 
-IpCount = {}
+	def domain_command(self, command, params=None, useprop=None):
+		if params == None:
+			params = {}
 
-for Provider in IPPROVIDERS:
-	try:
-		raw = urllib2.urlopen(provider).read()
-		IpCount[raw] = IpCount.get(raw, 0) + 1
-	except Exception:
-		sys.stderr.write(Provider + " is broken.\n")
+		if useprop == None:
+			useprop = {}
+		
+		paramsfinal = {
+			"z": self.properties["zone_name"]
+		}
+		
+		for prop in useprop:
+			paramsfinal[prop] = self.properties[prop]
 
-IpCount    = {ip.strip():IpResponce.count(ip) for ip in set(IpResponce)}
-Ip         = max(IpCount, key=lambda k:IpCount[k])
+		paramsfinal.update(params)
+			
+		return self.api.api_command(command, paramsfinal)
 
-if len(IpCount) != 1:
-	sys.stderr.write("Your IP websites said some bullshit.\n")
+# I feel this is too dirty for me		
+#	def iter_record(self, type=None):
+#		response = self.domain_command("rec_load_all", {})
+#
+#		for obj in response["recs"]["objs"]:
+#			if type and type != obj["type"]:
+#				continue
+#
+#			yield Record(self, obj)
 
-USER    = sys.argv[1]
-PASS    = sys.argv[2]
-TARGETS = set(sys.argv[3:])
+class Record(object):
+	def __init__(self, domain, properties):
+		self.domain = domain
+		
+		self.properties = {}
+		self.properties.update(properties)
 
-Client = pygodaddy.GoDaddyClient()
-if not Client.login(USER, PASS):
-	sys.stderr.write("Password/User incorrect.\n")
-print Client.find_domains()
-Domains  = set(Client.find_domains())
-Domains &= TARGETS
+	def record_command(self, command, params=None, useprop=None):
+		if params == None:
+			params = {}
 
-if len(Domains) < len(TARGETS):
-	sys.stderr.write("You don't even own these domains, you slut.\n")
+		if useprop == None:
+			useprop = {}
+			
+		paramsfinal = {
+			"id": self.properties["rec_id"]
+		}
 
-for Domain in Domains:
-	Record = Client.find_dns_records(Domain)
-	ZoneIP = Record[0].value
+		for prop in useprop:
+			paramsfinal[prop] = self.properties[prop]
+		
+		paramsfinal.update(params)
 
-	if ZoneIP != Ip:
-		print ("Redirecting domain "+Domain+" from "+ZoneIP+" to "+Ip)
+		#for item in 
+		
+		self.domain.domain_command(command, paramsfinal)
+			
+class CloudFlare(object):
+	def __init__(self, email, apitoken):
+		self.email = email
+		self.token = apitoken
 
-		Index = Record[0].index
+	def https_connect(self):
+		self.connection = httplib.HTTPSConnection("www.cloudflare.com")
 
-		Client._edit_record(Index, Ip)
-		Client._save_records(Domain, Index)
+	def https_get(self, path):
+		print path
+		self.connection.request("GET", path)
+		return self.connection.getresponse().read()
+
+	def api_error(self, msg):
+		raise Exception(msg)
+
+	def api_command(self, command, params=None):
+		if params == None:
+			params = {}
+			
+		paramsfinal = {
+			"email" : self.email,
+			"tkn"   : self.token,
+			"a"     : command
+		}
+
+		paramsfinal.update(params)
+		
+		paramstring = "?" + "&".join(key + "=" + value for key, value in paramsfinal.items())
+		path = "/api_json.html" + paramstring
+		response = self.https_get(path)
+
+		responsejson = json.loads(response)
+				 
+		if responsejson["result"] == "error":
+			self.api_error(responsejson["msg"])
+
+		return responsejson["response"]
+				 
+### Penis
+ip = urllib2.urlopen("http://icanhazip.com").read().strip()
+
+connection = CloudFlare(sys.argv[1], sys.argv[2])
+connection.https_connect()
+
+domains = connection.api_command("zone_load_multi")["zones"]["objs"]
+for domain in map(lambda d: Domain(connection, d), domains):
+	records = domain.domain_command("rec_load_all")["recs"]["objs"]
+	for record in map(lambda r: Record(domain, r), records):
+		if record.properties["type"] == "A" and record.properties["content"] != ip:
+			record.properties["content"] = ip
+			record.record_command("rec_edit", useprop=("type", "name", "content", "ttl"))

@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # +-------------------------------------------------------------------+
-# | Syncs '~/websync' to '~/web/files/$(HOSTNAME)' on canberra this   |
-# | is then accessible at 'http://xeo.la/f/$(HOSTNAME)/'.             |
+# | Syncs '~/websync' to '~/web/files/$(hostNAME)' on canberra this   |
+# | is then accessible at 'http://xeo.la/f/$(hostNAME)/'.             |
 # |                                                                   |
 # | The script logs the output of the last sync to                    |
 # | '~/doc/log/websync.log', and if its timestamp is before that of   |
@@ -20,12 +20,12 @@
 # xeom | 2014-10-05
 
 
-FLAGS="-azv --delete-after"
-HOST="xeom@xeo.la"
-REMOTE="~/srv/python-web/files/files/$HOSTNAME"
+flags="-azv --delete-after"
+host="xeom@xeo.la"
+remote="~/srv/python-web/files/files/$HOSTNAME"
 
-LOG=$HOME/doc/log/websync.log
-TOSYNC=$HOME/syn
+log=$HOME/doc/log/websync.log
+tosync=$HOME/syn
 
 getmtime()
 {
@@ -37,19 +37,19 @@ getmtimerecursive()
 	getmtime $(ls --sort=time $(find $1 -type f))
 }
 
-[[ ! -f $LOG ]] && touch $LOG
+[[ ! -f $log ]] && touch $log
 
 if [[ $* == *u* ]]; then
-	touch $LOG
+	touch $log
 
 elif [[ $* == *f* ]]; then
-	rsync $FLAGS $TOSYNC/ $HOST:$REMOTE
+	rsync $flags $tosync/ $host:$remote
 
-elif (( $(getmtime $LOG) < $(getmtimerecursive $TOSYNC) )); then
+elif (( $(getmtime $log) < $(getmtimerecursive $tosync) )); then
 	if [[ $* == *v* ]]; then
-		rsync $FLAGS $TOSYNC/ $HOST:$REMOTE
+		rsync $flags $tosync/ $host:$remote
 	else
-		rsync $FLAGS $TOSYNC/ $HOST:$REMOTE >> $LOG
+		rsync $flags $tosync/ $host:$remote >> $log
 	fi
-	notify-send "Websync" "Synchronized with server."
+	notifyscript "Synchronized with server"
 fi
