@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# +--------------------------------------------------------------------+
+# | A utility script, to flash the mute light for a specific amount of |
+# | seconds, at a specific frequency, and a specific duty cycle.       |
+# |                                                                    |
+# | After the light stops flashing, it will return to a state that     |
+# | indicates whether or not the master volume is muted.               |
+# |                                                                    |
+# | It is reccomended that you execute this script in the background   |
+# | (& instead of ; or \n), and continue with the process that         |
+# | triggered the flashing.                                            |
+# |                                                                    |
+# | All values of time, both in the options and script are in ms.      |
+# |                                                                    |
+# | The -f option may be followed by a positive integer to set a       |
+# | frequency for the indicator light to blink at.                     |
+# |                                                                    |
+# | The -t option may be followed by a positive integer to set a time  |
+# | in ms for the flashing to take.                                    |
+# |                                                                    |
+# | The -d option may be followed with an integer from 0 to 1000 to    |
+# | define a duty cycle for the flashing. 0 would turn the LED off as  |
+# | soon as it is turned on, and 1000 would turn it back on as soon as |
+# | it is turned off. 500 would be an even distribution of on and off. |
+# +--------------------------------------------------------------------+
+#
+# xeom | 2015-01-30
+
+# A useful function to get the current time
+# since epoch in miliseconds.
+function getmstime
+{
+    echo $(( $(date +%s%N) / 1000000 ))
+}
+
+# Sensible defaults
+time=2000
+hertz=5
+duty=500
+
+# A regex to match any positive integer
+posint='^[0-9]+$'
+
+while getopts ":f:t:d:" opt; do
+    case $opt in
+	f)
+	    hertz=$OPTARG
+	    if [[ ! $hertz =~ $posint ]]; then
+		echo "-h option requires a positive integer" >&2
+		exit 1
+	    fi
+	    ;;
+	t)
+	    time=$OPTARG
+	    echo $time
+	    if ! [[ $time =~ $posint ]]; then
+		echo "-t option requires a positive integer" >&2
+		exit 1
+	    fi
+	    ;;
+	d)
+	    duty=$OPTARG
+	    if ! [[ $duty =~ $posint ]]; then
+		echo "-d option requires a positive integer below 1000" >&2
+		exit 1
+	    fi
+
+	    if [[ $duty > 1000 ]]; then
+		echo "-d option requires a positive integer below 1000" >&2
+		exit 1
+	    fi
+	    ;;
+	\?)
+	    echo "Invalid option: $OPTARG" >&2
+	    exit 1
+	    ;;
+	:)
+	    echo "-$OPTARG needs argument"
+	    exit 1
+    esac
+done
+# Calculate the time to spend at high and low states
+hightime=$(( (        $duty ) / ( $hertz ) ))
+lowtime=$((  ( 1000 - $duty ) / ( $hertz ) ))
+
+# The time at which flashing will stop (+/- one flash-cycle)
+end=$(( $(getmstime) + time ))
+
+# Continually check time is not up
+while [[ $(getmstime) < $end ]]; do
+    # Set the LED on
+    amixer -c 1 -- cset name='Mute-LED Mode' On  &> /dev/null
+    # The e-3 allows (GNU) sleep to sleep for ms, not seconds
+    sleep ${hightime}e-3
+    amixer -c 1 -- cset name='Mute-LED Mode' Off &> /dev/null
+    sleep ${lowtime}e-3
+done
+
+# Reset LED to state of master-mute
+amixer -c 1 -- cset name='Mute-LED Mode' 'Follow Master' &> /dev/null

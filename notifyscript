@@ -1,0 +1,132 @@
+#!/bin/bash
+#
+# +--------------------------------------------------------------------+
+# | A utility script to display notifications to the user.             |
+# |                                                                    |
+# | By default, these are titled with the name of the command that     |
+# | sent the notification. If this was a shell script (/bin/sh,        |
+# | /bin/bash), then the title will by default be the first argument   |
+# | of the command.                                                    |
+# |                                                                    |
+# | The -u option may be used to invoke different urgencies, (critical,|
+# | normal, low). The letters c, n, and l may be used in place of      |
+# | these words.                                                       |
+# |                                                                    | 
+# | The -t option may be used to set a title instead of the default    |
+# | name of the command that sent the notification.                    |
+# |                                                                    |
+# | The -s option may be used to set a summary, which will form the    |
+# | title along with the name of the command that sent the             |
+# | notification.                                                      |
+# +--------------------------------------------------------------------+
+#
+# xeom | 2014-10-30
+
+# Get the PID of our parent process
+parentpid=$(ps -o ppid= $$)
+
+# Get our parent's command from its PID
+parentcmd=$(ps -o command= -p $parentpid)
+
+logfile=$HOME/doc/log/notifyscript.log
+
+# The notify was spawned from a shell script,
+if [[ $parentcmd == /bin/bash* || $parentcmd == /bin/sh* ]]; then
+    # so get the second argument, which should
+    # be the name of the script
+    parentcmd=$(cut -d" " -f2- <<< "$parentcmd")
+fi
+
+# Get only the first argument to ignore
+# args of the command
+parentcmd=$(cut -d" " -f1 <<< "$parentcmd")
+
+# Get only the filename
+parentcmd=$(basename -- $parentcmd)
+
+# By default, the title is the same as the command
+title=$parentcmd
+
+# By default, urgency is normal
+urgency=normal
+
+while getopts ":s:t:u:" opt; do
+    case $opt in
+	s)
+	    # A summary option
+	    echo $OPTARG
+	    summary=$OPTARG
+	    ;;
+	t)
+	    # A title option
+	    title=$OPTARG
+	    ;;
+	u)
+	    # An urgency option
+	    urgencyflag=$OPTARG
+	    ;;
+	v)
+		# Verbose
+		printlog=yes
+		;;
+	\?)
+	    # Echo error messages to stderr
+	    echo "Invalid option: $OPTARG" >&2
+	    exit 1
+	    ;;
+	:)
+	    echo "-$OPTARG needs argument" >&2
+	    exit 1
+
+    esac
+done
+
+# If a summary exists, append it to the title
+if [[ $summary ]]; then
+    title+=" - $summary"
+fi    
+	  
+case $urgencyflag in
+    "")
+	# If there is no urgency opt set, do nothing
+	;;
+    l)
+	# If there is an l option, set to low
+	urgency=low
+	;;
+    [hc])
+	# h or c options set to 'critical'
+	urgency=critical
+	;;
+    n)
+	# n sets to normal
+	urgency=normal
+	;;
+    high)
+	# 'high' sets to critical
+	urgency=critical
+	;;
+    low|normal|critical)
+	# just use any that are already notify-send options
+	urgency=$urgencyflag
+	;;
+    *)
+	echo Unknown urgency \"$urgencyflag\" >&2
+	exit 1
+esac
+
+shift $(( $OPTIND-1 ))
+
+message=$*
+
+notifyflash &
+notify-send -u $urgency -- "$title" "$message"
+
+datetime=$(date +%Y-%m-%d\ %H:%M)
+logmsg="[$datetime ${urgency^^}] [$parentcmd] [$title] $message "
+
+if [[ printlog == yes ]]; then
+	echo $logmsg >&2
+fi
+
+echo $logmsg >> $logfile
