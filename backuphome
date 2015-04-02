@@ -8,12 +8,6 @@
 # | Each argument is a user, whose bak directory is to be backed up   |
 # +-------------------------------------------------------------------+
 #
-# xeom(root) | 2014-10-08
-# xeom(root) | 2014-11-06
-#
-# Note: this file is executed every morning as root - It thus must only
-#  be modifiable by root, or anyone will be able to run anything as
-#  root.
 
 cd /home/
 

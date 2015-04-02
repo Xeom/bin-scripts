@@ -25,7 +25,6 @@
 # | it is turned off. 500 would be an even distribution of on and off. |
 # +--------------------------------------------------------------------+
 #
-# xeom | 2015-01-30
 
 # A useful function to get the current time
 # since epoch in miliseconds.
@@ -53,7 +52,6 @@ while getopts ":f:t:d:" opt; do
 	    ;;
 	t)
 	    time=$OPTARG
-	    echo $time
 	    if ! [[ $time =~ $posint ]]; then
 		echo "-t option requires a positive integer" >&2
 		exit 1

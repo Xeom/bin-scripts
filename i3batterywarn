@@ -1,10 +1,23 @@
 #!/bin/bash
+#
+# +-------------------------------------------------------------------+
+# | A simple script, taking no arguments that simply reads what       |
+# | percentage of batter is remaining from acpi, and if it is lower   |
+# | than a threshold, notifies the user via notifyscript.             |
+# |                                                                   |
+# | This script should be automatically run every minute or two,      |
+# | it's saved me a number of times.                                  |
+# +-------------------------------------------------------------------+
+#
 
+# Get verbose battery status
 batstatus=$(acpi --battery)
+# Grep out the percentage
 batpercent=$(grep -oP "[0-9]+(?=%)" <<< "$batstatus")
 
-lowthreshold="15"
+lowthreshold=15
 
+# If the laptop is not plugged in, and the percent is low, notify the user
 if [[ $(grep Discharging <<< "$batstatus") && (( $batpercent -lt $lowthreshold )) ]]; then
 	notifyscript -u critical "Battery low: Battery at $batpercent%";
 fi

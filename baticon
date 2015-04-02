@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# TODO: Explain this thing
+#
+#
+#
 
 batstatus=$(acpi --battery)
 temstatus=$(acpi --thermal)

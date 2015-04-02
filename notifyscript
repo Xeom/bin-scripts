@@ -20,7 +20,6 @@
 # | notification.                                                      |
 # +--------------------------------------------------------------------+
 #
-# xeom | 2014-10-30
 
 # Get the PID of our parent process
 parentpid=$(ps -o ppid= $$)
@@ -49,12 +48,13 @@ title=$parentcmd
 
 # By default, urgency is normal
 urgency=normal
+flashhz=5
+flashtm=2000
 
 while getopts ":s:t:u:" opt; do
     case $opt in
 	s)
 	    # A summary option
-	    echo $OPTARG
 	    summary=$OPTARG
 	    ;;
 	t)
@@ -84,31 +84,29 @@ done
 # If a summary exists, append it to the title
 if [[ $summary ]]; then
     title+=" - $summary"
-fi    
-	  
+fi
+
 case $urgencyflag in
     "")
 	# If there is no urgency opt set, do nothing
 	;;
-    l)
+    l|low)
 	# If there is an l option, set to low
 	urgency=low
+	flashhz=3
+	flashtm=1000
 	;;
-    [hc])
+    [hc]|high|critical)
 	# h or c options set to 'critical'
 	urgency=critical
+	flashhz=15
+	flashtm=5000
 	;;
-    n)
+    n|normal)
 	# n sets to normal
 	urgency=normal
-	;;
-    high)
-	# 'high' sets to critical
-	urgency=critical
-	;;
-    low|normal|critical)
-	# just use any that are already notify-send options
-	urgency=$urgencyflag
+	flashhz=5
+	flashtm=2000
 	;;
     *)
 	echo Unknown urgency \"$urgencyflag\" >&2
@@ -119,7 +117,7 @@ shift $(( $OPTIND-1 ))
 
 message=$*
 
-notifyflash &
+notifyflash -f $flashhz -t $flashtm &
 notify-send -u $urgency -- "$title" "$message"
 
 datetime=$(date +%Y-%m-%d\ %H:%M)

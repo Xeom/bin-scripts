@@ -7,7 +7,6 @@
 # | Any arguments are handed directly to each upower -i command.      |
 # +-------------------------------------------------------------------+
 #
-# xeom | 2014-09-25
 
 printpowerinfo()
 {

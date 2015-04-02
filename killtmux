@@ -6,7 +6,6 @@
 # | small-windowed sessions go away. Any arguments are passed to kill |
 # +-------------------------------------------------------------------+
 #
-# xeom | 2014-09-27
 
 killiftmux()
 {

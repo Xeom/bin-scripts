@@ -15,12 +15,8 @@
 # |              use. Death will result.                              |
 # +-------------------------------------------------------------------+
 #
-# xeom | 2014-09-26
-# xeom | 2014-10-01
-# xeom | 2014-10-05
 
-
-flags="-azv --delete-after"
+flags="-Lazv --delete-after"
 host="xeom@xeo.la"
 remote="~/srv/python-web/files/files/$HOSTNAME"
 

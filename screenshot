@@ -8,13 +8,12 @@
 # | "~/syn/screenshots" with a time and date stamp, in a .png format  |
 # +-------------------------------------------------------------------+
 #
-# xeom | 2014-11-10
 
 ssdir="/home/${USER}/syn/scr/"
 ssformat="%Y-%m-%d_%H-%M-%S.png"
 
-file=${ssdir}$(date +${ssformat})
-
+#file=${ssdir}$(date +${ssformat})
+file=/home/$USER/syn/scr.png
 scrot $file
 websync -f
 
