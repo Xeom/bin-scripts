@@ -17,4 +17,4 @@ file=/home/$USER/syn/scr.png
 scrot $file
 websync -f
 
-notifyscript -u low Took and uploaded screenshot
+notify-script -u low Took and uploaded screenshot

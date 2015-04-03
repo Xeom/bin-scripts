@@ -13,6 +13,10 @@
 
 otpw="/home/xeom/.otpw"
 
+if [[ ! -f $otpw ]]; then
+	echo No otp file found. >&2
+	exit 1
+fi
 total=$(cat $otpw | wc -l | awk '{print $1-2}')
 used=$(cat $otpw | grep -- - | wc -l)
 remaining=$(( $total - $used ))

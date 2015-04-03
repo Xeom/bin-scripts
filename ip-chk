@@ -118,6 +118,7 @@ ip = urllib2.urlopen("http://icanhazip.com").read().strip()
 connection = CloudFlare(sys.argv[1], sys.argv[2])
 connection.https_connect()
 
+# OKAY WHAT THE FUCK
 domains = connection.api_command("zone_load_multi")["zones"]["objs"]
 for domain in map(lambda d: Domain(connection, d), domains):
 	records = domain.domain_command("rec_load_all")["recs"]["objs"]

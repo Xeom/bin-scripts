@@ -47,5 +47,5 @@ elif (( $(getmtime $log) < $(getmtimerecursive $tosync) )); then
 	else
 		rsync $flags $tosync/ $host:$remote >> $log
 	fi
-	notifyscript "Synchronized with server"
+	notify-script "Synchronized with server"
 fi

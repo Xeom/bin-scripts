@@ -8,10 +8,21 @@
 # | /bin/bash), then the title will by default be the first argument   |
 # | of the command.                                                    |
 # |                                                                    |
-# | The -u option may be used to invoke different urgencies, (critical,|
-# | normal, low). The letters c, n, and l may be used in place of      |
-# | these words.                                                       |
-# |                                                                    | 
+# | The -u option may be used to invoke different urgencies, (critical |
+# | /high, normal, low). The letters c/h, n, and l may be used in      |
+# | place of these words.                                              |
+# |                                                                    |
+# | The standard uses for urgencies are as follows:                    |
+# |                                                                    |
+# | Critical - Used to notify the user of events that require action   |
+# |            soon to protect hardware, data, security etc.           |
+# |                                                                    |
+# | Normal - Used to notify the user of non-critical but unexpected    |
+# |          events.                                                   |
+# |                                                                    |
+# | Low - Used to notify the user of expected, scheduled or            |
+# |       user-initiated events.                                       |
+# |                                                                    |
 # | The -t option may be used to set a title instead of the default    |
 # | name of the command that sent the notification.                    |
 # |                                                                    |
@@ -117,7 +128,7 @@ shift $(( $OPTIND-1 ))
 
 message=$*
 
-notifyflash -f $flashhz -t $flashtm &
+notify-flash -f $flashhz -t $flashtm &
 notify-send -u $urgency -- "$title" "$message"
 
 datetime=$(date +%Y-%m-%d\ %H:%M)
