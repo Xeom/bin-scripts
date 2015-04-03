@@ -16,15 +16,15 @@ name="<unknown>"
 while true; do
 # Read, ignoring escapes, until the first bell char if
 # no bell is received in 10 seconds, the script loops
-	read -r -d $'\a' -t 10;
+	read -r -d $'\a' -t 10
 	code=$?
 
 # If the code is a timeout error, continue
-	if [[ $code > 128 ]]; then
+	if   [[ $code >= 128 ]]; then
 		continue
 
 # If read returned eof, suicide
-	elif [[ $code != 0 ]]; then
+	elif [[ $code != 000 ]]; then
 		exit 0
 	fi
 
