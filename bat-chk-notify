@@ -19,5 +19,5 @@ lowthreshold=15
 
 # If the laptop is not plugged in, and the percent is low, notify the user
 if [[ $(grep Discharging <<< "$batstatus") && (( $batpercent -lt $lowthreshold )) ]]; then
-	notifyscript -u critical "Battery low: Battery at $batpercent%";
+	notify-script -u critical "Battery low: Battery at $batpercent%";
 fi

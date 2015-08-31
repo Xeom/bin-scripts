@@ -20,11 +20,11 @@ while true; do
 	code=$?
 
 # If the code is a timeout error, continue
-	if   [[ $code >= 128 ]]; then
+	if   [[ $code >  128 ]]; then
 		continue
 
 # If read returned eof, suicide
-	elif [[ $code != 000 ]]; then
+	elif [[ $code !=   0 ]]; then
 		exit 0
 	fi
 

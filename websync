@@ -40,10 +40,12 @@ if [[ $* == *u* ]]; then
 
 elif [[ $* == *f* ]]; then
 	rsync $flags $tosync/ $host:$remote
+	touch $log
 
 elif (( $(getmtime $log) < $(getmtimerecursive $tosync) )); then
 	if [[ $* == *v* ]]; then
 		rsync $flags $tosync/ $host:$remote
+		touch $log
 	else
 		rsync $flags $tosync/ $host:$remote >> $log
 	fi

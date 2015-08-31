@@ -61,9 +61,14 @@ title=$parentcmd
 urgency=normal
 flashhz=5
 flashtm=2000
+flash=yes
 
-while getopts ":s:t:u:" opt; do
+while getopts ":s:t:u:e:" opt; do
     case $opt in
+	e)
+		# Expiry time
+		expiry=$OPTARG
+		;;
 	s)
 	    # A summary option
 	    summary=$OPTARG
@@ -104,8 +109,7 @@ case $urgencyflag in
     l|low)
 	# If there is an l option, set to low
 	urgency=low
-	flashhz=3
-	flashtm=1000
+	flash=no
 	;;
     [hc]|high|critical)
 	# h or c options set to 'critical'
@@ -126,10 +130,19 @@ esac
 
 shift $(( $OPTIND-1 ))
 
+if [[ ! -z $expiry ]];
+then
+	expiryflag="-t $expiry"
+fi
+
 message=$*
 
-notify-flash -f $flashhz -t $flashtm &
-notify-send -u $urgency -- "$title" "$message"
+if [[ $flash = yes ]];
+then
+	notify-flash -f $flashhz -t $flashtm &
+fi
+
+notify-send $expiryflag -u $urgency -- "$title" "$message"
 
 datetime=$(date +%Y-%m-%d\ %H:%M)
 logmsg="[$datetime ${urgency^^}] [$parentcmd] [$title] $message "

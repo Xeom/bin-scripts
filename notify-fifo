@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+# +--------------------------------------------------------------------+
+# | Script that reads from a fifo at "/tmp/notify-script" and executes |
+# | everything there as a notification. If the fifo does not exist, it |
+# | reads the last five lines of whatever is there, and creates it.    |
+# |                                                                    |
+# | This is useful for programs running as root or other users, which  |
+# | want to notify the current user of things.                         |
+# |                                                                    |
+# | It is reccomended that you use this to trigger notifications like  |
+# | echo "Notification" >> /tmp/notify &                               |
+# +--------------------------------------------------------------------+
+#
+
+
+fifo="/tmp/notify-script"
+command="notify-script -t $fifo"
+
+# If the fifo exists, but is not a pipe
+if [[ -f $fifo ]]
+then
+# Read the last five lines
+	while read line;
+	do
+# Do the thing
+		$command $line
+	done < <(cat $fifo | tail -n 5)
+# Kill the imposter
+	rm $fifo
+fi
+
+# If the fifo does not exist as a pipe,
+# make it!
+[[ -p $fifo ]] || mkfifo $fifo
+
+while true;
+do
+# Read and notify all the things
+	while read line;
+	do
+		$command $line
+	done < $fifo
+done
