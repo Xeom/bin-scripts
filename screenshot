@@ -13,8 +13,17 @@ ssdir="/home/${USER}/syn/scr/"
 ssformat="%Y-%m-%d_%H-%M-%S.png"
 
 #file=${ssdir}$(date +${ssformat})
-file=/home/$USER/syn/scr.png
+name=$(zenity --entry)
+if [[ -z $name ]]; then
+	exit 0
+fi
+
+if [[ ! $name == *.png ]]; then
+	name="${name}.png"
+fi
+
+file=/home/$USER/syn/img/$name
 scrot $file
 websync -f
 
-notify-script -u low Took and uploaded screenshot
+notify-script -u low Took and uploaded screenshot $name
