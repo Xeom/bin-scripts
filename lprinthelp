@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# +---------------------------------------------------------------------+
+# | A utility script, prints out the content of the first lines of      |
+# | stdin that are enclosed in a box formed of -s, |s and +es, and      |
+# | commented out with #es.                                             |
+# |                                                                     |
+# | This command takes no arguments.                                    |
+# +---------------------------------------------------------------------+
+#
+if [[ $(getopt -o h -l help -- "$@") != " --" ]]; then
+	lhelp
+	exit 0
+fi 2>/dev/null
+
+
+delimit="#\s\+-+\+"
+content="#\s\|.+\|"
+extract="(?<=\|).*(?=\|)"
+
+while read -r line; do
+	if [[ $(grep -Px $delimit <<< $line) ]]; then
+		break
+	fi
+done
+
+while read -r line; do
+	if   [[ $(grep -Px  ${delimit} <<< ${line}) ]]; then
+		break
+	elif [[ $(grep -Px ${content} <<< ${line}) ]]; then
+		grep -Po ${extract} <<< "${line}"
+	else
+		exit 0
+	fi
+done

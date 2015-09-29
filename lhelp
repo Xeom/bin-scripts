@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# +---------------------------------------------------------------------+
+# | A script that should be ideally used in any script. Extracts the    |
+# | contents of a commented-out box from the current script and prints  |
+# | them out in a nicely formatted way. No arguments. The process       |
+# | calling this command is assumed to be the one to be documented. Use |
+# | cat [script] | lprinthelp to replicate this functionality in a more |
+# | flexible way.                                                       |
+# +---------------------------------------------------------------------+
+#
+
+if [[ $(getopt -o h -l help -- "$@") != " --" ]]; then
+	lhelp
+	exit 0
+fi 2>/dev/null
+
+exepath=$(lgetpidpath $$)
+echo 
+echo "lhelp: Displaying help for $(basename $exepath):"
+echo 
+
+cat $(realpath $exepath) | lprinthelp
