@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# +---------------------------------------------------------------------+
+# | A script that flashes the mute led. Used for notifications. The     |
+# | script has two options:                                             |
+# | -d - Sets the delay in seconds between any two items in a sequence. |
+# |      The default is 0.1.                                            |
+# | -s - Sets the sequence of on-offs in 0s and 1s to be repeated by    |
+# |      the LED. The default is "10".                                  |
+# +---------------------------------------------------------------------+
+#
+
+if [[ $(getopt -q -o h -l help -- "$@" | grep -Po ".*--") != " --" ]]; then
+	lhelp
+	exit 0
+fi
+
+seq=10
+delay=0.1
+rep=10
+
+while getopts ":r:s:d:" opt; do
+	case ${opt} in
+		d)
+			delay=${OPTARG}
+			if [[ ! ${delay} =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+				echo "-d Requires a positive number" 1>&2
+				exit 1
+			fi
+			;;
+		s)
+			seq=${OPTARG}
+			if [[ ! ${seq} =~ ^[01]+$ ]]; then
+				echo "-s Requires a sequence of 1s and 0s" 1>&2
+				exit 1
+			fi
+			;;
+		r)
+			rep=${OPTARG}
+			if [[ ! ${rep} =~ ^[0-9]+$ ]]; then
+				echo "-r Requires a positive integer" 1>&2
+				exit 1
+			fi
+			;;
+		\?)
+			echo "Invalid option: ${OPTARG}" 1>&2
+			exit 1
+			;;
+		:)
+			echo "-${OPTARG} needs argument" 1>&2
+			exit 1
+			;;
+	esac
+done
+	
+yes ${seq} | head -n ${rep} | grep -o . | while read char; do
+	if [[ ${char} == 1 ]]; then
+		amixer -q -c 1 -- cset name='Mute-LED Mode' On
+	fi
+	if [[ ${char} == 0 ]]; then
+		amixer -q -c 1 -- cset name='Mute-LED Mode' Off
+	fi
+	sleep ${delay}
+done
+
+amixer -q -c 1 -- cset name='Mute-LED Mode' 'Follow Master'
+   		
+		
