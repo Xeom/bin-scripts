@@ -7,13 +7,12 @@
 # +-------------------------------------------------------------------+
 #
 
-# Default
 name="<unknown>"
 
 # If there is an argument, use it as program name
 [[ $1 ]] && name=$1
 
-while true; do
+tee >(while true; do
 # Read, ignoring escapes, until the first bell char if
 # no bell is received in 10 seconds, the script loops
 	read -r -d $'\a' -t 10
@@ -29,5 +28,5 @@ while true; do
 	fi
 
 # If read returned success, notify user of bell
-	notify-script -t "Bell received" $name
-done
+	notify-send "Bell Alert" $name
+done)
