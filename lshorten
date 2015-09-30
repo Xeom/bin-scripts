@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# +---------------------------------------------------------------------+
+# | A script that shortens whatever url is handed to it through stdin   |
+# | The script shortens with the url.xeo.la/api/?url interface. Which   |
+# | returns the shortened url in a json format.                         |
+# | There are three nonzero return codes represtenting different kinds  |
+# | of error.                                                           |
+# | 1 - An error connecting with the api. Could be network issues, the  |
+# |     service could be offline, moved, or possibly our request is     |
+# |     malformed and being rejected by curl.                           |
+# | 2 - The server responded but the response could not be parsed as    |
+# |     json. There could be a difference between the json standards of |
+# |     the client and server, or any similar issue.                    |
+# | 3 - The server responded with valid json which either specifically  |
+# |     contained an error message or contained no usable data.         |
+# +---------------------------------------------------------------------+
+#
+
+if [[ $(getopt -q -o h -l help -- "$@") != " --" ]]; then
+	lhelp
+	exit 0
+fi
+
+dom="xeo.la"
+service="url.${dom}/api"
+
+url=$(cat -)
+params="url=${url}"
+
+json=$(curl --silent --data-urlencode ${params} ${service})
+
+if [[ $? != 0 ]]; then
+	echo Error: "curl returned a nonzero response code" 1>&2
+	exit 1
+fi
+	
+error=$(js <<< "console.log(${json}.error || \"\")")
+
+if [[ $? != 0 ]]; then
+	echo Error: "could not parse json for errors" 1>&2
+	exit 2
+fi
+	
+if [[ ! -z ${error} ]]; then
+	echo Error: ${error} 1>&2
+	exit 3
+fi
+	
+code=$(js <<< "console.log(${json}.code || \"\")")
+
+if [[ $? != 0 ]]; then
+	echo Error: "could not parse json for code" 1>&2
+	exit 2
+fi
+
+if [[ -z ${code} ]]; then
+	echo Error: "api returned no code" 1>&2
+	exit 3
+fi
+
+echo "http://${dom}/${code}"

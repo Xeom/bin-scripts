@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# +---------------------------------------------------------------------+
+# | This script prints the path of the executable creating the parent   |
+# | process. If a PID is given as an argument, the executable of that   |
+# | process's parent is printed.                                        |
+# +---------------------------------------------------------------------+
+#
+
+if [[ $(getopt -q 3-o h -l help -- "$@" | grep -Po ".*--") != " --" ]]; then
+	lhelp
+	exit 0
+fi
+
+
+if [[ $1 =~ ^[0-9]+$ ]]; then
+	pid=$1
+else
+	pid=$$
+fi
+
+parentpid=$(ps -o ppid= $pid)
+parentcmd=$(ps -o command= $parentpid)
+
+for bin in bash sh python; do
+	if [[ $parentcmd == /bin/${bin}\ * ]]; then
+		parentcmd=$(cut -d" " -f2- <<< $parentcmd)
+		break
+	fi
+done
+
+parentcmd=$(cut -d" " -f1 <<< $parentcmd)
+
+echo $parentcmd

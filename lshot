@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# TODO:Help
+#
+
+if [[ $(getopt -q -o h -l help -- "$@") != " --" ]]; then
+	lhelp
+	exit 0
+fi
+
+syndir="/home/${USER}/syn/"
+scrdir="img/scr/"
+service="http://f.xeo.la"
+
+name=$(echo "(.png by default)" | dmenu -p "Name screenshot: ")
+if [[ -z $name ]]; then
+	exit 0
+fi
+
+if [[ ! $name == *.* ]]; then
+	name=${name}.png
+fi
+
+localpath=${syndir}${scrdir}${name}
+webpath=${service}/${scrdir}${name}
+
+scrot ${localpath}
+
+notify-send -u low "lshot" "Took and uploaded screenshot ${name}"
+
+echo ${webpath}
