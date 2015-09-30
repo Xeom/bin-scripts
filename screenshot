@@ -9,11 +9,12 @@
 # +-------------------------------------------------------------------+
 #
 
-ssdir="/home/${USER}/syn/scr/"
-ssformat="%Y-%m-%d_%H-%M-%S.png"
+webdir="img/scr/"
+webdom="http://f.xeo.la/"
+ssdir="/home/${USER}/syn/"
 
 #file=${ssdir}$(date +${ssformat})
-name=$(zenity --entry)
+name=$(echo "(.png by default)" | dmenu -p "Name screenshot: ")
 if [[ -z $name ]]; then
 	exit 0
 fi
@@ -22,8 +23,12 @@ if [[ ! $name == *.png ]]; then
 	name="${name}.png"
 fi
 
-file=/home/$USER/syn/img/$name
-scrot $file
+file=${ssdir}${webdir}${name}
+url=${webdom}${webdir}${name}
+scrot ${file}
+echo ${file}
 websync -f
 
 notify-script -u low Took and uploaded screenshot $name
+echo ${url} | xclip -selection clipboard
+echo ${url} | xclip -selection primary
