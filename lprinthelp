@@ -13,7 +13,6 @@ if [[ $(getopt -o h -l help -- "$@") != " --" ]]; then
 	exit 0
 fi 2>/dev/null
 
-
 delimit="#\s\+-+\+"
 content="#\s\|.+\|"
 extract="(?<=\|).*(?=\|)"
@@ -28,7 +27,7 @@ while read -r line; do
 	if   [[ $(grep -Px  ${delimit} <<< ${line}) ]]; then
 		break
 	elif [[ $(grep -Px ${content} <<< ${line}) ]]; then
-		grep -Po ${extract} <<< "${line}"
+		grep -Po ${extract} <<< "${line}" 1>&2
 	else
 		exit 0
 	fi

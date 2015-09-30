@@ -10,14 +10,14 @@
 # +---------------------------------------------------------------------+
 #
 
-if [[ $(getopt -o h -l help -- "$@") != " --" ]]; then
+if [[ $(getopt -q -o h -l help -- "$@") != " --" ]]; then
 	lhelp
 	exit 0
-fi 2>/dev/null
+fi
 
 exepath=$(lgetpidpath $$)
-echo 
-echo "lhelp: Displaying help for $(basename $exepath):"
-echo 
+echo                                                    1>&2
+echo "lhelp: Displaying help for $(basename $exepath):" 1>&2
+echo                                                    1>&2
 
 cat $(realpath $exepath) | lprinthelp
