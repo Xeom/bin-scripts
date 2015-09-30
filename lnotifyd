@@ -15,7 +15,7 @@
 
 
 fifo="/tmp/notify-script"
-command="notify-script -t $fifo"
+command="notify-send ${fifo}"
 
 # If the fifo exists, but is not a pipe
 if [[ -f $fifo ]]
