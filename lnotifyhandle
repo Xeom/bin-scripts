@@ -3,9 +3,11 @@
 urgency=$5
 
 if   [[ ${urgency} == LOW ]]; then
-	lflash -d 0.3 -r 3
-elif [[ ${urgency} == NORMAL ]]; then
-	lflash -d 0.15 -r 5
+	lflash -d 0.3 -r 3 &
+
+elif [[ ${urgency} == NORMAL ]]; then 
+	lflash -d 0.15 -r 5 &
+
 elif [[ ${urgency} == CRITICAL ]]; then
-	lflash -d 0.05 -s 11001010 -r 15
+	lflash -d 0.05 -s 11001010 -r 15 &
 fi
