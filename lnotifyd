@@ -39,6 +39,6 @@ do
 # Read and notify all the things
 	while read line;
 	do
-		$command $line
+		$command "$line"
 	done < $fifo
 done
