@@ -52,8 +52,10 @@ while getopts ":r:s:d:" opt; do
 			;;
 	esac
 done
-	
-yes ${seq} | head -n ${rep} | grep -o . | while read char; do
+
+for i in $(seq ${rep}); do
+	echo ${seq}
+done | grep -o . | while read char; do
 	if [[ ${char} == 1 ]]; then
 		amixer -q -c 1 -- cset name='Mute-LED Mode' On
 	fi
@@ -64,5 +66,3 @@ yes ${seq} | head -n ${rep} | grep -o . | while read char; do
 done
 
 amixer -q -c 1 -- cset name='Mute-LED Mode' 'Follow Master'
-   		
-		
